@@ -1,0 +1,93 @@
+<!-- <!DOCTYPE htmlPUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> -->
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<script>
+				window.onload=function()
+				{
+					var errorMess=document.getElementsByClassName("errorMessage");
+
+					//document.forms[0];
+					document.getElementById("myForm").onsubmit=function(event)
+					{
+						var acceptable=true;
+						var text1=this["text1"].value;
+						var text2=this["text2"].value;
+
+						if (!verifyDate(text1)) {
+							errorMess[0].childNodes[0].nodeValue="*正确的日期格式为2014-5-16";
+							acceptable=false;
+						}else{
+							errorMess[0].childNodes[0].nodeValue="*";
+						}
+
+						if (!verifyDate(text2)) {
+							errorMess[1].childNodes[0].nodeValue="*正确的日期格式为2014-5-16";
+							acceptable=false;
+						}else{
+							errorMess[1].childNodes[0].nodeValue="*";
+						}
+
+						if(!compareDate(text1,text2))
+						{
+							errorMess[2].childNodes[0].nodeValue="请保证日期2大于日期1";
+							acceptable=false;
+						}else{
+							errorMess[2].childNodes[0].nodeValue="";
+						}
+						if(acceptable)
+						{
+							//如果经过验证，则提交表单
+							this.submit();
+							alert("提交成功");
+							this.disabled=true;
+						}else
+						{
+							//如果验证不通过，阻止表单默认提交行为
+							event.cancelable=true;
+							event.preventDefault();
+						}
+					}
+				}
+
+				function compareDate(d1, d2)
+				{
+				  //分隔成数组
+				  var arrayD1 = d1.split('-');
+				  var arrayD2 = d2.split('-');
+				  //创建两个Date对象
+				  var date1 = new Date(arrayD1[0], arrayD1[1], arrayD1[2]);
+				  var date2 = new Date(arrayD2[0], arrayD2[1], arrayD2[2]);
+				  if (date1 > date2)
+				  return false;
+				  return true;
+				}
+				function verifyDate(d)
+				{
+				  //定义一个正则表达式对象
+				  var datePattern = /^\d{4}-(0?[1-9]|1[0-2])-(0?[1-9]|[1,2]\d|3[0-1])$/;
+				  return datePattern.test(d);
+				}
+		</script>
+		<style>
+			*{
+				margin:0px;
+				padding:0px;
+			}
+            input[name]
+            {
+                border: 1px black solid;
+                height: 22.5px;
+                width: 200px;
+            }
+		</style>
+	</head>
+	<body>
+		<form action="login.php" method="get" id="myForm">
+			注册日期1:<input type="text" name="text1"/><span style="color:red;" class="errorMessage">*</span><br>
+			离职日期2:<input type="text" name="text2"/><span style="color:red;" class="errorMessage">*</span><br>
+			&emsp;&emsp;&emsp;&emsp;&emsp;<span style="color:red;" class="errorMessage">&nbsp;</span><br>
+			&emsp;&emsp;&emsp;&emsp;&emsp;<input type="reset" value="重置"><input type="submit" value="提交">
+		</form>
+	</body>
+</html>
