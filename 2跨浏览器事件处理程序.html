@@ -1,0 +1,76 @@
+<script>
+	//这里没有讨论HTML事件处理程序,针对的是DOM事件处理程序与ie事件处理程序
+	//以对象字面量方式声明一个跨浏览器事件处理对象
+	var EventUtil=
+	{
+		// element:要绑定事件的元素  type:绑定的事件类型  handle:要绑定的事件处理函数(最好传函数名，别传函数体，匿名函数对于DOM2级无法移除）
+		//ie事件处理程序只支持冒泡
+		//非ie有冒泡和捕获两种形式，第三个参数false表明采用冒泡
+
+		addHandle:function(element,type,handle){
+			if(element.addEventListener)
+			{
+				element.addEventListener(type,handle,false);//非IE9及IE9之后的浏览器
+			}else if(element.attachEvent)
+			{
+				element.attachEvent("on"+type,handle);//IE9之前的浏览器
+			}else {
+				element["on"+type]=handle;//通用DOM0级,浏览器都兼容
+			}
+		},
+		removeHandle:function (element,type,handle) {
+			if(element.removeEventListener) {
+				element.removeEventListener(type, handle, false);
+			}else if(element.detachEvent){
+				element.detachEvent("on"+type,handle,false);
+			}else {
+				element[on+"type"]=null;
+			}
+		},
+
+		//兼容获取事件对象,调用时记得传参哦！
+		getEvent:function (event) {
+			return event?event:window.event;//IE中event对象作为window对象的属性而存在
+//			var trueEvent=event?event:window.event;
+//			return trueEvent;
+		},
+		//获取事件当前真正的目标,不一定等于注册该事件的元素哦
+		getTarget:function (event) {
+			return event.target||event.srcElement;
+		},
+		//阻止事件默认行为,调用时先用getEvent()方法获取正确的事件对象,再作为参数传递进来,HTML事件处理程序中直接return false,
+		preventDefault:function (event) {
+			if(event.preventDefault){
+				event.cancelable=true;
+				event.preventDefault();
+			}else {
+				event.returnValue=false;//将ie事件对象的returnValue属性值设置为false
+			}
+		},
+		//阻止事件向上级冒泡,使其作用域限定为注册元素
+		stopPropagation:function (event) {
+			if(event.stopPropagation)
+			{
+				event.stopPropagation();
+			}else {
+				event.cancelBubble=true;//ie
+			}
+		}
+	}
+
+	//示例
+	var btn=document.getElementById("myBtn");
+	var myHandle=function () {
+		alert("ok");
+	};
+
+	EventUtil.addHandle(btn,"mouseover",myHandle);
+	btn.onclick=function (event) {
+		event=EventUtil.getEvent(event);
+		EventUtil.stopPropagation(event);//传入获取的event
+	}
+
+</script>
+<!---
+	在事件处理程序内部,this对象和event对象的currentTarget属性的值始终相等，代表的是注册该事件的对象
+->
