@@ -8,7 +8,6 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-
 /**
  * 车辆保修、报废提醒。
  * @author lihao
@@ -83,6 +82,7 @@ public class Solution {
 				return o1.getBrand().compareTo(o2.getBrand());
 			}
 		});
+		//对车辆进行分类:1.已经报废的车辆无需提醒, 2.需要进行报废提醒的车无需进行维护提醒,3.需要进行每一万公里保养提醒的车无需进行定期保养提醒。
 		for(int i=0;i<cars.length;i++){
 			if(!valid(cars[i])){//车辆已报废
 				continue;
@@ -91,43 +91,45 @@ public class Solution {
 				writeOffWarnList.add(cars[i]);
 				continue;
 			}
-			if(distanceRelatedWarn(cars[i])){//距离维护提醒
+			if(distanceRelatedWarn(cars[i])){//每一万公里保养提醒
 				distanceRelatedWarnList.add(cars[i]);
 				continue;
 			}
-			if(timeRelatedWarn(cars[i])){//定期维护提醒
+			if(timeRelatedWarn(cars[i])){//定期保养提醒
 				timeRelatedWarnList.add(cars[i]);
 			}
 		}
+		//实现各自的打印方法
 		CarOutPut timeRelated=new CarOutPut() {
 			@Override
-			public void outPut(List<Car> cars) {
+			public void print(List<Car> cars) {
 				System.out.println();
 				System.out.println("* Time-related maintenance coming soon...");
-				this.outputHandle(cars);
+				this.printHandle(cars);
 			}
 		};
 		CarOutPut distanceRelated=new CarOutPut() {
 			@Override
-			public void outPut(List<Car> cars) {
+			public void print(List<Car> cars) {
 				System.out.println();
 				System.out.println("* Distance-related maintenance coming soon...");
-				this.outputHandle(cars);
+				this.printHandle(cars);
 			}
 		};
 		CarOutPut writeOff=new CarOutPut() {
 			@Override
-			public void outPut(List<Car> cars) {
+			public void print(List<Car> cars) {
 				System.out.println();
 				System.out.println("* Write-off coming soon...");
-				this.outputHandle(cars);
+				this.printHandle(cars);
 			}
 		};
+		//进行打印输出
 		System.out.println("Reminder");
 		System.out.println("==================");
-		timeRelated.outPut(timeRelatedWarnList);
-		distanceRelated.outPut(distanceRelatedWarnList);
-		writeOff.outPut(writeOffWarnList);
+		timeRelated.print(timeRelatedWarnList);
+		distanceRelated.print(distanceRelatedWarnList);
+		writeOff.print(writeOffWarnList);
 	}
 	/**
 	 * 车辆是否已经报废:false(无效已报废)，true(有效未报废)
