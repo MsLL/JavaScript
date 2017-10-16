@@ -1,0 +1,210 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * 车辆保修、报废提醒。
+ * @author lihao
+ * @dateTime 2017年10月14日-下午11:17:50
+ */
+public class Solution {
+	private Calendar submitDate;
+	private Car[] cars;
+	public static void main(String[] args) throws Exception {
+		String filePath="C:/Users/lihao/Desktop/test.txt";/*在此写入测试文本全路径-_-*/
+		Solution solution=new Solution();
+		solution.init(solution.getInput(filePath));
+		solution.sortCar();
+	}
+	/**
+	 * 读取测试文本
+	 * @param filePath 测试文本全路径名
+	 * @return
+	 * @throws IOException 
+	 */
+	public String getInput(String filePath) throws Exception{
+		StringBuffer sb=new StringBuffer();
+		BufferedReader br=null;
+		try {
+			br=new BufferedReader(new FileReader(new File(filePath)));
+			String line=null;
+			while((line=br.readLine())!=null){
+				sb.append(line+System.lineSeparator());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			if(br!=null){
+				br.close();
+				br=null;
+			}
+		}
+		if(sb.length()>0)
+			return sb.toString();
+		System.out.println("您的测试文本为空-_-");
+		return null;//文本为空，返回null
+	}
+	/**
+	 * 根据读入的测试文本初始化submitDate、cars。
+	 * @param CarsInformation 读取的测试文本
+	 */
+	public void init(String CarsInformation){
+		if(CarsInformation==null)
+			return;
+		String[] informations=CarsInformation.split(System.lineSeparator());
+		submitDate=Calendar.getInstance();
+		submitDate.setTime(new Date(informations[0].split(" ")[1]));
+		cars=new Car[informations.length-1];
+		for(int i=1;i<informations.length;i++){
+			String[] carinfo=informations[i].split("\\|");
+			cars[i-1]=new Car(carinfo[0],new Date(carinfo[1]),carinfo[2], Integer.valueOf(carinfo[3]),carinfo[4].equals("T"));
+		}
+	}
+	/**
+	 * 对汽车提醒进行分类，每一类保存在一个list中,并进行打印输出
+	 */
+	public void sortCar(){
+		if(cars==null)
+			return;
+		ArrayList<Car> writeOffWarnList=new ArrayList<Car>(); 
+		ArrayList<Car> distanceRelatedWarnList=new ArrayList<Car>();
+		ArrayList<Car> timeRelatedWarnList=new ArrayList<Car>();
+		//对整体排一次序，则之后各部分内部有序
+		Arrays.sort(cars, new Comparator<Car>() {
+			@Override
+			public int compare(Car o1, Car o2) {
+				return o1.getBrand().compareTo(o2.getBrand());
+			}
+		});
+		for(int i=0;i<cars.length;i++){
+			if(!valid(cars[i])){//车辆已报废
+				continue;
+			}
+			if(writeOffWarn(cars[i])){//车辆已经需要提醒报废
+				writeOffWarnList.add(cars[i]);
+				continue;
+			}
+			if(distanceRelatedWarn(cars[i])){//距离维护提醒
+				distanceRelatedWarnList.add(cars[i]);
+				continue;
+			}
+			if(timeRelatedWarn(cars[i])){//定期维护提醒
+				timeRelatedWarnList.add(cars[i]);
+			}
+		}
+		CarOutPut timeRelated=new CarOutPut() {
+			@Override
+			public void outPut(List<Car> cars) {
+				System.out.println();
+				System.out.println("* Time-related maintenance coming soon...");
+				this.outputHandle(cars);
+			}
+		};
+		CarOutPut distanceRelated=new CarOutPut() {
+			@Override
+			public void outPut(List<Car> cars) {
+				System.out.println();
+				System.out.println("* Distance-related maintenance coming soon...");
+				this.outputHandle(cars);
+			}
+		};
+		CarOutPut writeOff=new CarOutPut() {
+			@Override
+			public void outPut(List<Car> cars) {
+				System.out.println();
+				System.out.println("* Write-off coming soon...");
+				this.outputHandle(cars);
+			}
+		};
+		System.out.println("Reminder");
+		System.out.println("==================");
+		timeRelated.outPut(timeRelatedWarnList);
+		distanceRelated.outPut(distanceRelatedWarnList);
+		writeOff.outPut(writeOffWarnList);
+	}
+	/**
+	 * 车辆是否已经报废:false(无效已报废)，true(有效未报废)
+	 */
+	public boolean valid(Car car){
+		if(car==null)
+			return false;
+		//经历过大修,距当前超过3年--报废
+		//设置报废时间
+		Calendar calendar=Calendar.getInstance();
+		calendar.setTime(car.getBuyDate().getTime());
+		calendar.add(Calendar.DAY_OF_YEAR, BaseConst.WRITEOFF_LIMIT_REPAIRED);
+		if(car.isRepaired()==true && calendar.compareTo(submitDate)<=0)
+			return false;
+		//未经历过大修,距今超过6年--报废
+		calendar.setTime(car.getBuyDate().getTime());
+		calendar.add(Calendar.DAY_OF_YEAR, BaseConst.WRITEOFF_LIMIT_DEFAULT);
+		if(car.isRepaired()==false && calendar.compareTo(submitDate)<=0)
+			return false;
+		return true;//车辆未报废
+	}
+	/**
+	 * 车辆是否需要进行报废提醒:false(不需要提醒)，true(需要提醒)
+	 */
+	public boolean writeOffWarn(Car car){
+		if(car==null)
+			return false;
+		Calendar calendar=Calendar.getInstance();
+		calendar.setTime(car.getBuyDate().getTime());
+		if(car.isRepaired()==true){//经历过大修
+			calendar.add(Calendar.DAY_OF_YEAR, BaseConst.WRITEOFF_LIMIT_REPAIRED);
+		}else{//未经历过大修
+			calendar.add(Calendar.DAY_OF_YEAR, BaseConst.WRITEOFF_LIMIT_DEFAULT);
+		}
+		calendar.add(Calendar.MONTH, -1);
+		calendar.set(Calendar.DAY_OF_MONTH, 1);
+		if(calendar.compareTo(submitDate)<=0)//notice等于
+			return true;
+		return false;
+	}
+	/**
+	 * 车辆是否需要进行每一万公里提醒:false(不需要提醒)，true(需要提醒)
+	 * dis%10000>=(10000-500) || dis%10000==0 && dis>=10000
+	 */
+	public boolean distanceRelatedWarn(Car car){
+		if(car==null)
+			return false;
+		int dis=car.getDistance();
+		if((dis%BaseConst.DISTANCE_DEFAULT) >= (BaseConst.DISTANCE_DEFAULT-BaseConst.DISTANCE_WARN) || (dis>=BaseConst.DISTANCE_DEFAULT && dis%BaseConst.DISTANCE_DEFAULT==0))
+			return true;
+		return false;
+	}
+	/**
+	 * 车辆是否需要进行定期保养提醒:false(不需要提醒)，true(需要提醒)
+	 */
+	public boolean timeRelatedWarn(Car car){
+		if(car==null)
+			return false;
+		Calendar buyDate=car.getBuyDate();
+		int year=submitDate.get(Calendar.YEAR)-buyDate.get(Calendar.YEAR);	//距离购买日期过去的年数--只看年，不看月份
+		int month=12*year+submitDate.get(Calendar.MONTH)-buyDate.get(Calendar.MONTH);	//距离购买日期过去的月数
+		if(month<0){
+			System.out.println("submitDate输入有误");
+			return false;
+		}
+		if(car.isRepaired()==true){//有大修过，每3个月保养一次
+			if(month%3==2 || (month%3==0 && buyDate.get(Calendar.DAY_OF_MONTH)>=submitDate.get(Calendar.DAY_OF_MONTH)))
+					return true;
+		}else{//无大修
+			if(year>=3){//3年及以上---每6个月保养
+				if(month%6==5 || (month%6==0 && buyDate.get(Calendar.DAY_OF_MONTH)>=submitDate.get(Calendar.DAY_OF_MONTH)))
+					return true;
+			}else{//3年以下---每12个月保养一次
+				if(month%12==11 || (month%12==0 && buyDate.get(Calendar.DAY_OF_MONTH)>=submitDate.get(Calendar.DAY_OF_MONTH)))
+					return true;
+			}
+		}
+		return false;
+	}
+}
