@@ -12,7 +12,7 @@ import java.util.List;
  * 车辆保修、报废提醒。
  * @author lihao
  * @dateTime 2017年10月14日-下午11:17:50
- * thought work
+ * thought work 家庭作业
  */
 public class Solution {
 	private Calendar submitDate;
